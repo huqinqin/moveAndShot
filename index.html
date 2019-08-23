@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body onload="onLoad();">
+   <canvas id="cvs" width="1000" height="800" style="border: 1px solid black;"></canvas>
+   <script>
+       var cvs = document.getElementById('cvs');
+       var ctx = cvs.getContext('2d');
+       var gGame = null;
+       function onLoad() {
+           gGame = new Game();
+           gGame.render();
+           gGame.update();
+       }
+       function Game() {
+           var _this = this;
+           this.bord = null;
+           this.bullets = [];
+           this.frame = 0;
+           this.lastFrame = 0;
+           this.CDCode = 60;
+           this.status = [{
+               keyCode: 37,
+               status: false
+           },{
+               keyCode: 39,
+               status: false
+           },{
+               keyCode: 32,
+               status: false
+           }];
+           this.render = function () {
+               _this.bord = new Bord(_this.status);
+           };
+           this.update = function () {
+               _this.frame++;
+               ctx.clearRect(0,0,cvs.width,cvs.height);
+               _this.bord.draw();
+               _this.fire();
+               if(_this.bullets.length > 0){
+                   _this.bullets.forEach(function (val,index) {
+                       val.draw();
+                       val.updatePos();
+                       if(val.dead){
+                           _this.bullets.splice(index,1)
+                       }
+                   });
+               }
+
+               window.requestAnimationFrame(_this.update)
+           };
+           this.fire = function () {
+               if((_this.status[0].status && _this.status[2].status) ||(_this.status[1].status && _this.status[2].status) || _this.status[2].status){
+                  if(_this.frame >= _this.lastFrame + _this.CDCode){
+                      _this.bullets.push(new Bullet(_this.bord.positionX,_this.bord.positionY));
+                      _this.lastFrame = _this.frame
+                  }
+              }
+           }
+       }
+       function Bord(status) {
+           var _this = this;
+           this.positionX = 20;
+           this.positionY = 200;
+           this.draw = function () {
+               ctx.beginPath();
+               ctx.fillRect(_this.positionX,_this.positionY,100,50);
+           };
+           document.onkeydown = function (e) {
+               status.forEach(function (val) {
+                   if(val.keyCode == e.keyCode){
+                       val.status = true;
+                   }
+               });
+               if(_this.positionX >= 0 && _this.positionY <= cvs.width - 100){
+                   console.log(status[0].status, status[1].status, status[2].status);
+                   if(status[0].status){
+                       _this.positionX -= 3;
+                   }else if(status[1].status){
+                       _this.positionX += 3;
+                   }
+               }
+           };
+           document.onkeyup = function (e) {
+               status.forEach(function (val) {
+                   if(val.keyCode == e.keyCode){
+                       val.status = false
+                   }
+               })
+           }
+       }
+       function Bullet(positionX,positionY) {
+           var _this = this;
+           this.positionX = positionX + 50;
+           this.positionY = positionY + 20;
+           this.dead = false;
+           this.draw = function () {
+               ctx.beginPath();
+               ctx.arc(_this.positionX,_this.positionY,20,0,Math.PI * 2);
+               ctx.fill();
+           };
+           this.updatePos = function () {
+               if(_this.positionY >= cvs.height - 20){
+                   _this.dead = true;
+               }
+               _this.positionY += 1;
+           };
+       }
+   </script>
+</body>
+</html>
